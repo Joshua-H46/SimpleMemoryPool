@@ -1,6 +1,7 @@
 #include "MemoryPool.h"
 #include <iostream>
 #include <string>
+#include <chrono>
 
 struct Chunk
 {
@@ -8,7 +9,7 @@ struct Chunk
     int a{1};
     int b{2};
     int c{3};
-    char arr[1012];
+    char arr[500];
 
     int eval()
     {
@@ -25,9 +26,7 @@ int main()
 
     memorypool::MemoryPool<1024, 1000> mem_pool;
     mem_pool.init();
-    timespec ts;
-    ::clock_gettime(CLOCK_REALTIME, &ts);
-    auto start = ts;
+    auto start = std::chrono::system_clock::now();
     Chunk* p[1000];
     for (int i=0; i<1000; i++)
     {
@@ -37,8 +36,7 @@ int main()
         // p[i]->a = i;
     }
 
-    ::clock_gettime(CLOCK_REALTIME, &ts);
-    auto mid = ts;
+    auto mid = std::chrono::system_clock::now();
 
     Chunk* p2[1000];
     for (int i=0; i<1000; i++)
@@ -48,8 +46,7 @@ int main()
         // p2[i]->a = i;
     }
 
-    ::clock_gettime(CLOCK_REALTIME, &ts);
-    auto end = ts;
+    auto end = std::chrono::system_clock::now();
 
     for (int i=0; i<1000; i++)
     {
@@ -58,6 +55,6 @@ int main()
         delete p2[i];
     }
 
-    std::cout << mid.tv_sec - start.tv_sec << "  " << mid.tv_nsec - start.tv_nsec << std::endl;
-    std::cout << end.tv_sec - mid.tv_sec << "  " << end.tv_nsec - mid.tv_nsec << std::endl;
+    std::cout << "The duration for creating objects with memory pool is: " << std::chrono::duration_cast<std::chrono::microseconds>(mid - start).count() << " microseconds" << std::endl;
+    std::cout << "The duration for creating objects with new is: " << std::chrono::duration_cast<std::chrono::microseconds>(end - mid).count() << " microseconds" << std::endl;
 }
