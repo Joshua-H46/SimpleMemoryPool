@@ -4,17 +4,16 @@
 
 struct Chunk
 {
+    Chunk(int a, int b, int c) : a(a), b(b), c(c) {}
     int a{1};
     int b{2};
     int c{3};
-    int d{4};
-    uint64_t arr[1000];
+    char arr[1012];
 
     int eval()
     {
-        a = b;
+        a = c;
         b = c;
-        c = d;
         return a;
     }
 };
@@ -24,35 +23,37 @@ struct Chunk
 int main()
 {
 
-    memorypool::MemoryPool<Chunk, 100> mem_pool;
+    memorypool::MemoryPool<1024, 1000> mem_pool;
     mem_pool.init();
     timespec ts;
     ::clock_gettime(CLOCK_REALTIME, &ts);
     auto start = ts;
-    Chunk* p[100];
-    for (int i=0; i<100; i++)
+    Chunk* p[1000];
+    for (int i=0; i<1000; i++)
     {
-        p[i] = mem_pool.alloc();
+        // std::cout << "# " << i << std::endl;
+        p[i] = mem_pool.alloc<Chunk>(i, i+1, i+2);
         p[i]->eval();
-        p[i]->a = i;
+        // p[i]->a = i;
     }
 
     ::clock_gettime(CLOCK_REALTIME, &ts);
     auto mid = ts;
 
-    Chunk* p2[100];
-    for (int i=0; i<100; i++)
+    Chunk* p2[1000];
+    for (int i=0; i<1000; i++)
     {
-        p2[i] = new Chunk();
+        p2[i] = new Chunk(i, i+1, i+2);
         p2[i]->eval();
-        p2[i]->a = i;
+        // p2[i]->a = i;
     }
 
     ::clock_gettime(CLOCK_REALTIME, &ts);
     auto end = ts;
 
-    for (int i=0; i<100; i++)
+    for (int i=0; i<1000; i++)
     {
+        // std::cout << p[i]->a << std::endl;
         mem_pool.dealloc(p[i]);
         delete p2[i];
     }

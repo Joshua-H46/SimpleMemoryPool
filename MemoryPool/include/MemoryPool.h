@@ -5,82 +5,57 @@
 
 namespace memorypool {
 
-    template<typename T, unsigned int SIZE>
+    template<unsigned int BLOCK_SIZE, unsigned int BLOCK_NUM>
     class MemoryPool
     {
+        using Chunk = MemoryChunk<BLOCK_SIZE>;
     public:
         void init()
         {
-            MemoryChunk<T>* mem = (MemoryChunk<T>*) ::malloc(SIZE * sizeof(MemoryChunk<T>));
-            freeList = mem;
-            MemoryChunk<T>* cur = mem, *prev = nullptr;
-            for (int i=0; i<SIZE - 1; i++)
+            _freeList = (Chunk*) ::malloc(sizeof(Chunk) * BLOCK_NUM);
+            Chunk* cur = _freeList;
+            for (int i = 0; i < BLOCK_NUM - 1; i++)
             {
-                cur->prev = prev;
-                cur->next = (mem + i + 1);
-                if (prev)
-                    prev->next = cur;
-
-                prev = cur;
+                // std::cout << "# " << i << " " << cur << std::endl;
+                new (cur) Chunk();
+                cur->next = cur + 1;
                 cur = cur->next;
             }
-            cur->prev = prev;
-            cur->next = nullptr;
-            prev->next = cur;
         }
 
-        T* alloc()
+        template<typename T, typename ...Args>
+        T* alloc(Args &&... args)
         {
-            if (freeList)
+            if constexpr (sizeof(T) > BLOCK_SIZE)
             {
-                auto res = freeList;
-                freeList->prev = nullptr;
-                freeList = freeList->next;
-                if (freeList)
-                {
-                    freeList->prev = nullptr;
-                }
-                return res->alloc();
+                std::cerr << "Size exceeds\n";
+                return nullptr;
+            }
+
+            if (_freeList)
+            {
+                auto res = _freeList->malloc(sizeof(T));
+                // std::cout << _freeList->next << std::endl;
+                _freeList = _freeList->next;
+                new (res) T(std::forward<Args>(args)...);
+                return reinterpret_cast<T*>(res);
             }
             throw std::bad_alloc();
         }
 
-        void dealloc(T* p_)
+        void dealloc(void* p_)
         {
             if (!p_)
             {
                 return;
             }
 
-            auto cur = (MemoryChunk<T>*) p_;
-            if (cur->next)
-            {
-                cur->next->prev = cur->prev;
-            }
-            if (cur->prev)
-            {
-                cur->prev->next = cur->next;
-            }
-            cur->next = freeList;
-            cur->prev = nullptr;
-            if (freeList)
-            {
-                freeList->prev = cur;
-            }
-            else
-            {
-                freeList = cur;
-            }
-            
-            if (!cur->dealloc())
-            {
-                std::cerr << "Failed to dealloc" << std::endl;
-            }
+            auto cur = reinterpret_cast<Chunk*>(p_);
+            new (p_) Chunk();
+            cur->next = _freeList;
         }
 
     private:
-        // MemoryChunk<T>* mems;
-        MemoryChunk<T>* freeList{nullptr};
-        MemoryChunk<T>* usedList{nullptr};
+        Chunk* _freeList{nullptr};
     };
 }

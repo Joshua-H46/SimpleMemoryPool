@@ -1,42 +1,25 @@
 #pragma once
+#include <memory>
+#include <cstddef>
+#include <iostream>
 
 namespace memorypool {
 
     // One memory chunk holds a object of T (or a bunch of memory)
-    template<typename T>
-    class MemoryChunk
+    template<unsigned int SIZE>
+    struct MemoryChunk
     {
-    public:
-        T* alloc()
+        void* malloc(unsigned int size_)
         {
-            if (isUsed())
-            {
-                return nullptr;
-            }
-            
-            _used = true;
-            return &_t;
+            return _mem;
         }
 
-        bool dealloc()
-        {
-            if (!isUsed())
-            {
-                return false;
-            }
-            _used = false;
-            return true;
-        }
+        void free() {}
 
-        bool isUsed() const
+        union
         {
-            return _used;
-        }
-
-    // private:
-        T _t;
-        MemoryChunk<T>* next{nullptr};
-        MemoryChunk<T>* prev{nullptr};
-        bool _used{false};
+            std::byte _mem[SIZE];
+            MemoryChunk<SIZE>* next{nullptr};  
+        };
     };
 }
