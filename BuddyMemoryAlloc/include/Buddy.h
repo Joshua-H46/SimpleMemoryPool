@@ -109,9 +109,10 @@ public:
 private:
     unsigned roundUpTo2sPower(unsigned size_)
     {
+        size_ = std::max(size_, PGSIZE);
         if (IS_POWER_OF_TWO(size_))
         {
-            return std::max(size_, PGSIZE);
+            return size_;
         }
 
         size_ |= size_ >> 1;
@@ -119,7 +120,7 @@ private:
         size_ |= size_ >> 4;
         size_ |= size_ >> 8;
         size_ |= size_ >> 16;
-        return std::max(size_ + 1, PGSIZE);
+        return size_ + 1;
     }
 
 
